@@ -11,7 +11,7 @@ pub struct Settings {
 
 impl Settings {
     pub fn load() -> Result<Settings, &'static str> {
-        let path = Path::new("src/application.conf");
+        let path = Path::new("resources/application.conf");
         let cfg = reader::from_file(path);
 
         match cfg {
