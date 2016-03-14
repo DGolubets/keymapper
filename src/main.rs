@@ -8,6 +8,7 @@ extern crate user32;
 
 mod settings;
 mod windows;
+mod util;
 
 use winapi::winuser::*;
 
