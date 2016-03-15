@@ -1,7 +1,8 @@
 use std::rc::{Rc, Weak};
-use std::cell::{Cell, RefCell, RefMut, Ref};
+use std::cell::{Cell, RefCell, Ref};
 use std::collections::HashMap;
 use std::mem;
+use std::ops::Deref;
 
 /// A collection type that holds no strong references to items.
 /// An item lives in collection for as long as there is an external reference to it.
@@ -63,6 +64,14 @@ pub struct WeakCollectionItem<T> {
 
 impl<T> WeakCollectionItem<T> {
     pub fn get(&self) -> &T {
+        &self.item.value
+    }
+}
+
+impl<T> Deref for WeakCollectionItem<T> {
+    type Target = T;
+
+    fn deref(&self) -> &T {
         &self.item.value
     }
 }
@@ -148,7 +157,7 @@ mod tests {
         drop(a);
         let snapshot: Vec<WeakCollectionItem<&str>> = collection.into_iter().collect();
         assert_eq!(1, snapshot.len());
-        assert_eq!(b.get(), snapshot[0].get());
+        assert_eq!(*b, *snapshot[0]);
     }
 
     #[test]
@@ -167,7 +176,7 @@ mod tests {
         let mut collection = WeakCollection::new();
         let a = collection.push("abc");
         let b = collection.push("def");
-        
+
         drop(a);
         collection.shrink_to_fit();
         assert_eq!(1, collection.capacity());
