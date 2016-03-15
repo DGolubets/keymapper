@@ -116,3 +116,19 @@ impl<'a, T: 'a> Iterator for WeakCollectionIterator<'a, T> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use util::weak_collection::*;
+
+    #[test]
+    fn drops_dead_elements() {
+        let mut collection = WeakCollection::new();
+        let a = collection.push("abc");
+        let b = collection.push("def");
+        drop(a);
+        let snapshot: Vec<WeakCollectionItem<&str>> = collection.into_iter().collect();
+        assert_eq!(1, snapshot.len());
+        assert_eq!(b.get(), snapshot[0].get());
+    }
+}
