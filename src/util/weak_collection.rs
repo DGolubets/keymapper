@@ -1,5 +1,5 @@
 use std::rc::{Rc, Weak};
-use std::cell::{RefCell, RefMut};
+use std::cell::{Cell, RefCell, RefMut, Ref};
 use std::collections::HashMap;
 use std::mem;
 
@@ -10,10 +10,10 @@ pub struct WeakCollection<T> {
 }
 
 impl<T> WeakCollection<T> {
+
     pub fn new() -> Self {
         let internal_collection = WeakCollectionInternal {
-            last_id: 0,
-            table_by_id: HashMap::new()
+            items: Vec::new()
         };
 
         let internal_collection = Rc::new(RefCell::new(internal_collection));
@@ -25,26 +25,36 @@ impl<T> WeakCollection<T> {
 
     pub fn push(&mut self, value: T) -> WeakCollectionItem<T> {
         let mut collection = self.collection.borrow_mut();
-        collection.last_id += 1;
 
         let item = WeakCollectionItemInternal {
             owner: Rc::downgrade(&self.collection),
-            id: collection.last_id,
+            index: Cell::new(collection.items.len()),
             value: value
         };
 
         let item = Rc::new(item);
-        collection.table_by_id.insert(item.id, Rc::downgrade(&item));
+        collection.items.push(Rc::downgrade(&item));
 
         WeakCollectionItem {
             item: item
         }
     }
+
+    pub fn len(&self) -> usize {
+        self.collection.borrow().items.len()
+    }
+
+    pub fn capacity(&self) -> usize {
+        self.collection.borrow().items.capacity()
+    }
+
+    pub fn shrink_to_fit(&mut self) {
+        self.collection.borrow_mut().items.shrink_to_fit();
+    }
 }
 
 struct WeakCollectionInternal<T> {
-    last_id: i32,
-    table_by_id: HashMap<i32, Weak<WeakCollectionItemInternal<T>>>
+    items: Vec<Weak<WeakCollectionItemInternal<T>>>
 }
 
 pub struct WeakCollectionItem<T> {
@@ -59,7 +69,7 @@ impl<T> WeakCollectionItem<T> {
 
 struct WeakCollectionItemInternal<T> {
     owner: Weak<RefCell<WeakCollectionInternal<T>>>,
-    id: i32,
+    index: Cell<usize>,
     value: T
 }
 
@@ -67,7 +77,15 @@ impl<T> Drop for WeakCollectionItemInternal<T> {
     fn drop(&mut self) {
         if let Some(owner) = self.owner.upgrade() {
             let mut owner = owner.borrow_mut();
-            owner.table_by_id.remove(&self.id);
+            let index = self.index.get();
+            owner.items.swap_remove(index);
+
+            if(owner.items.len() > 0){
+                // set valid index on swapped item
+                if let Some(item) = owner.items[index].upgrade(){
+                    item.index.set(index);
+                }
+            }
         }
     }
 }
@@ -78,19 +96,19 @@ impl<'a, T: 'a> IntoIterator for &'a WeakCollection<T> {
     type IntoIter = WeakCollectionIterator<'a, T>;
 
     fn into_iter(self) -> Self::IntoIter {
-        WeakCollectionIterator::new(self.collection.borrow_mut())
+        WeakCollectionIterator::new(self.collection.borrow())
     }
 }
 
 pub struct WeakCollectionIterator<'a, T: 'a> {
-    iter: ::std::collections::hash_map::Values<'a, i32, Weak<WeakCollectionItemInternal<T>>>,
-    _rm: RefMut<'a, WeakCollectionInternal<T>>
+    iter: ::std::slice::Iter<'a, Weak<WeakCollectionItemInternal<T>>>,
+    _rm: Ref<'a, WeakCollectionInternal<T>> // own Ref here to keep RefCell state valid
 }
 
 impl <'a, T: 'a> WeakCollectionIterator<'a, T> {
-    fn new(t: RefMut<'a, WeakCollectionInternal<T>>) -> WeakCollectionIterator<'a, T>{
+    fn new(t: Ref<'a, WeakCollectionInternal<T>>) -> WeakCollectionIterator<'a, T>{
         WeakCollectionIterator {
-            iter: unsafe { mem::transmute(t.table_by_id.values()) },
+            iter: unsafe { mem::transmute((&t.items).into_iter()) },
             _rm: t,
         }
     }
@@ -126,9 +144,32 @@ mod tests {
         let mut collection = WeakCollection::new();
         let a = collection.push("abc");
         let b = collection.push("def");
+
         drop(a);
         let snapshot: Vec<WeakCollectionItem<&str>> = collection.into_iter().collect();
         assert_eq!(1, snapshot.len());
         assert_eq!(b.get(), snapshot[0].get());
+    }
+
+    #[test]
+    fn keep_valid_item_indexes_after_drop() {
+        let mut collection = WeakCollection::new();
+        let a = collection.push("abc");
+        let b = collection.push("def");
+
+        assert_eq!(b.item.index.get(), 1);
+        drop(a);
+        assert_eq!(b.item.index.get(), 0);
+    }
+
+    #[test]
+    fn shrink_to_fit() {
+        let mut collection = WeakCollection::new();
+        let a = collection.push("abc");
+        let b = collection.push("def");
+        
+        drop(a);
+        collection.shrink_to_fit();
+        assert_eq!(1, collection.capacity());
     }
 }
