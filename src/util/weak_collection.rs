@@ -1,6 +1,6 @@
+#![allow(dead_code)]
 use std::rc::{Rc, Weak};
 use std::cell::{Cell, RefCell, Ref};
-use std::collections::HashMap;
 use std::mem;
 use std::ops::Deref;
 
@@ -89,7 +89,7 @@ impl<T> Drop for WeakCollectionItemInternal<T> {
             let index = self.index.get();
             owner.items.swap_remove(index);
 
-            if(owner.items.len() > 0){
+            if owner.items.len() > 0 {
                 // set valid index on swapped item
                 if let Some(item) = owner.items[index].upgrade(){
                     item.index.set(index);
