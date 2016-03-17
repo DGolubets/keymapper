@@ -41,26 +41,6 @@ impl Hook {
             }
         })
     }
-
-    pub fn set_shell_hook<H: Fn(u64) -> HookAction + 'static>(handler: H) -> Hook {
-        SHELL_HOOKS.with(|hooks|{
-            let mut hooks = hooks.borrow_mut();
-            let handle = unsafe { SetWindowsHookExW(10, Some(shell_hook_proc), ptr::null_mut(), 0) };
-
-            let handler = move |_, w_param, l_param| {
-                handler(w_param)
-            };
-
-            let hook = HookInternal {
-                handle: handle,
-                handler: Box::new(handler)
-            };
-
-            Hook {
-                _hook_int: hooks.push(hook)
-            }
-        })
-    }
 }
 
 pub struct HookInternal {
@@ -92,20 +72,15 @@ unsafe extern "system" fn keyboard_hook_proc(n_code: i32, w_param: u64, l_param:
     base_hook_proc(&KB_HOOKS, n_code, w_param, l_param)
 }
 
-unsafe extern "system" fn shell_hook_proc(n_code: i32, w_param: u64, l_param: i64) -> i64 {
-    base_hook_proc(&SHELL_HOOKS, n_code, w_param, l_param)
-}
-
 unsafe fn base_hook_proc(local: &'static LocalKey<RefCell<WeakCollection<HookInternal>>>, n_code: i32, w_param: u64, l_param: i64) -> i64 {
     // If nCode is less than zero, the hook procedure must pass the message to the CallNextHookEx function without further processing
     // and should return the value returned by CallNextHookEx.
     if n_code == 0 {
         let action = local.with(|hooks| {
-            let mut hooks = hooks.borrow_mut();
+            let hooks = hooks.borrow_mut();
 
             for item in hooks.into_iter() {
-                let hook = item.get();
-                let action = (&hook.handler)(n_code, w_param, l_param);
+                let action = (&item.handler)(n_code, w_param, l_param);
 
                 match action {
                     HookAction::Block => return HookAction::Block,
@@ -126,4 +101,3 @@ unsafe fn base_hook_proc(local: &'static LocalKey<RefCell<WeakCollection<HookInt
 }
 
 thread_local!(static KB_HOOKS: RefCell<WeakCollection<HookInternal>> = RefCell::new(WeakCollection::new()));
-thread_local!(static SHELL_HOOKS: RefCell<WeakCollection<HookInternal>> = RefCell::new(WeakCollection::new()));

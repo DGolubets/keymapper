@@ -29,7 +29,8 @@ fn main() {
     let _hook = Hook::set_keyboard_hook(move |e| {
         let action = match e.vk_code {
             VK_LWIN if should_process() => HookAction::Block,
-            VK_TAB if e.flags == 0x00000020 && should_process() => HookAction::Block, // Alt-Tab
+            VK_TAB if e.flags & 0x00000020 > 0 && should_process() => HookAction::Block, // Alt-Tab
+            VK_CAPITAL if should_process() => HookAction::Block,
             _ => HookAction::Forward
         };
 
@@ -38,11 +39,6 @@ fn main() {
              HookAction::Block => "blocked"
         });
         action
-    });
-
-    let _hook = Hook::set_shell_hook(|e| {
-        debug!("shell hook invoked!");
-        HookAction::Forward
     });
 
     windows::message_loop();
