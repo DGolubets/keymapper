@@ -67,6 +67,18 @@ pub struct KbEvent {
     pub flags: i32
 }
 
+impl KbEvent {
+    pub fn alt(&self) -> bool {
+        const LLKHF_ALTDOWN: i32 = 0x20;
+        self.flags & LLKHF_ALTDOWN > 0
+    }
+
+    pub fn up(&self) -> bool {
+        const LLKHF_UP: i32 = 0x80;
+        self.flags & LLKHF_UP > 0
+    }
+}
+
 /* PRIVATE */
 unsafe extern "system" fn keyboard_hook_proc(n_code: i32, w_param: u64, l_param: i64) -> i64 {
     base_hook_proc(&KB_HOOKS, n_code, w_param, l_param)
@@ -77,7 +89,7 @@ unsafe fn base_hook_proc(local: &'static LocalKey<RefCell<WeakCollection<HookInt
     // and should return the value returned by CallNextHookEx.
     if n_code == 0 {
         let action = local.with(|hooks| {
-            let hooks = hooks.borrow_mut();
+            let hooks = hooks.borrow();
 
             for item in hooks.into_iter() {
                 let action = (&item.handler)(n_code, w_param, l_param);

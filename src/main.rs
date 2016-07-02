@@ -29,8 +29,11 @@ fn main() {
     let _hook = Hook::set_keyboard_hook(move |e| {
         let action = match e.vk_code {
             VK_LWIN if should_process() => HookAction::Block,
-            VK_TAB if e.flags & 0x00000020 > 0 && should_process() => HookAction::Block, // Alt-Tab
-            VK_CAPITAL if should_process() => HookAction::Block,
+            VK_TAB if e.alt() && should_process() => HookAction::Block, // Alt-Tab
+            VK_CAPITAL if should_process() => {
+                windows::send_input_key(VK_F11, e.up());
+                HookAction::Block
+            },
             _ => HookAction::Forward
         };
 
