@@ -30,6 +30,10 @@ fn main() {
         let action = match e.vk_code {
             VK_LWIN if should_process() => HookAction::Block,
             VK_TAB if e.alt() && should_process() => HookAction::Block, // Alt-Tab
+            VK_TAB if !e.alt() && should_process() => {
+                windows::send_input_key(VK_BACK, e.up());
+                HookAction::Forward
+            }, // Alt-Tab
             VK_CAPITAL if should_process() => {
                 windows::send_input_key(VK_F11, e.up());
                 HookAction::Block
