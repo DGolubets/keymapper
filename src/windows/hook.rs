@@ -57,6 +57,7 @@ impl Drop for HookInternal {
     }
 }
 
+#[derive(PartialEq)]
 pub enum HookAction {
     Block,
     Forward

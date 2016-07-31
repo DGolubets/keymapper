@@ -11,4 +11,5 @@ fn main() {
     fs::create_dir(dest_path.join("resources"));
     fs::copy(res_path.join("log.toml"), dest_path.join("resources/log.toml"));
     fs::copy(res_path.join("application.conf"), dest_path.join("resources/application.conf"));
+    fs::copy(res_path.join("profiles.xml"), dest_path.join("resources/profiles.xml"));
 }

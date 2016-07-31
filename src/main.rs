@@ -6,12 +6,13 @@ extern crate config;
 extern crate winapi;
 extern crate user32;
 
+mod errors;
 mod settings;
+mod profiles;
 mod windows;
 mod util;
 
-use winapi::winuser::*;
-
+use profiles::*;
 use settings::Settings;
 use windows::{ Window, Hook, HookAction };
 
@@ -19,36 +20,74 @@ fn main() {
     log4rs::init_file("resources/log.toml", Default::default()).expect("Can't load logging config.");
     info!("Starting Keymapper..");
     let settings = Settings::load().expect("Can't load settings.");
-
-    let should_process = move ||{
-        settings.windows.iter()
-            .filter_map(|w| Window::find(w))
-            .any(|w| w.is_foreground())
-    };
+    let profiles = profiles::load_profiles().expect("Can't load profiles.");
 
     let _hook = Hook::set_keyboard_hook(move |e| {
-        let action = match e.vk_code {
-            VK_LWIN if should_process() => HookAction::Block,
-            VK_TAB if e.alt() && should_process() => HookAction::Block, // Alt-Tab
-            VK_TAB if !e.alt() && should_process() => {
-                windows::send_input_key(VK_BACK, e.up());
-                HookAction::Forward
-            }, // Alt-Tab
-            VK_CAPITAL if should_process() => {
-                windows::send_input_key(VK_F11, e.up());
-                HookAction::Block
-            },
-            _ => HookAction::Forward
-        };
+        let action = profiles
+            .iter()
+            .fold(HookAction::Forward, |result, profile| {
+                // return early
+                if result == HookAction::Block  {
+                    return result;
+                }
 
-        trace!("Pressed {}. Action: {}.", e.vk_code, match action {
-             HookAction::Forward => "passed",
-             HookAction::Block => "blocked"
-        });
+                // try another profile
+                let should_process = move ||{
+                    profile.triggers
+                        .iter()
+                        .filter_map(|trigger| {
+                            match trigger {
+                                &Trigger::Window { ref name } => Window::find(name)
+                            }
+                        })
+                        .any(|w| w.is_foreground())
+                };
+
+                for binding in &profile.bindings {
+                    let vcode_matched = binding.vcode == e.vk_code as u16;
+                    let flags_matched = e.flags as u16 & binding.flags == binding.flags;
+                    let key_matched = vcode_matched && flags_matched;
+
+                    if key_matched && should_process() {
+                        if try_enter() {
+                            trace!("Profile \"{}\" blocked key: {:X} + {:X}", profile.name,  e.vk_code, e.flags);
+                            for key in &binding.keys {
+                                trace!("Sending key: {:X}", key.vcode);
+                                windows::send_input_key(key.vcode as i32, e.up());
+                                //windows::send_input_key(key.vcode as i32, true);
+                            }
+                            leave();
+                            return HookAction::Block;
+                        }
+                    }
+                }
+
+                HookAction::Forward
+            });
         action
     });
 
     windows::message_loop();
 
     info!("Shutting down Keymapper..");
+}
+
+static mut reentrance_guard: i32 = 0;
+
+fn try_enter() -> bool {
+    unsafe {
+        if reentrance_guard == 0 {
+            reentrance_guard = reentrance_guard + 1;
+            true
+        }
+        else {
+            false
+        }
+    }
+}
+
+fn leave() {
+    unsafe {
+        reentrance_guard = reentrance_guard - 1;
+    }
 }

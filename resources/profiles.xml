@@ -1,0 +1,48 @@
+<profiles>
+  <profile name="Games">
+    <triggers>
+      <window name="Witcher 3" />
+      <window name="Overwatch" />
+    </triggers>
+    <bindings>
+      <binding vcode="0x5B">
+        <!-- Block Win-Left -->
+      </binding>
+      <binding vcode="0x09" flags="0x20">
+        <!-- Block Alt-Tab -->
+      </binding>
+    </bindings>
+  </profile>
+  <profile name="WoW">
+    <triggers>
+      <window name="World of Warcraft" />
+    </triggers>
+    <bindings>
+      <binding vcode="0x5B">
+        <!-- Block Win-Left -->
+      </binding>
+      <binding vcode="0x09" flags="0x20">
+        <!-- Block Alt-Tab -->
+      </binding>
+      <binding vcode="0x09">
+        <!-- Remap Tab to Tab, Back -->
+        <key vcode="0x09" />
+        <key vcode="0x08" />
+      </binding>
+      <binding vcode="0x14">
+        <!-- Remap CapsLock to F11 -->
+        <key vcode="0x7A" />
+      </binding>
+      <binding vcode="0x51">
+        <!-- Remap Q to Q, F12 -->
+        <key vcode="0x51" />
+        <key vcode="0x7B" />
+      </binding>
+	  <binding vcode="0x51" flags="0x20">
+        <!-- Remap Alt-Q to Alt-Q, Alt-F12 -->
+        <key vcode="0x51" />
+        <key vcode="0x7B" />
+      </binding>
+    </bindings>
+  </profile>
+</profiles>
