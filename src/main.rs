@@ -21,6 +21,7 @@ fn main() {
     info!("Starting Keymapper..");
     let settings = Settings::load().expect("Can't load settings.");
     let profiles = profiles::load_profiles().expect("Can't load profiles.");
+    let re_guard = util::ReentranceGuard::new();
 
     let _hook = Hook::set_keyboard_hook(move |e| {
         let action = profiles
@@ -49,14 +50,13 @@ fn main() {
                     let key_matched = vcode_matched && flags_matched;
 
                     if key_matched && should_process() {
-                        if try_enter() {
+                        if let Some(_) = re_guard.try_lock() {
                             trace!("Profile \"{}\" blocked key: {:X} + {:X}", profile.name,  e.vk_code, e.flags);
                             for key in &binding.keys {
                                 trace!("Sending key: {:X}", key.vcode);
                                 windows::send_input_key(key.vcode as i32, e.up());
                                 //windows::send_input_key(key.vcode as i32, true);
                             }
-                            leave();
                             return HookAction::Block;
                         }
                     }
@@ -70,24 +70,4 @@ fn main() {
     windows::message_loop();
 
     info!("Shutting down Keymapper..");
-}
-
-static mut reentrance_guard: i32 = 0;
-
-fn try_enter() -> bool {
-    unsafe {
-        if reentrance_guard == 0 {
-            reentrance_guard = reentrance_guard + 1;
-            true
-        }
-        else {
-            false
-        }
-    }
-}
-
-fn leave() {
-    unsafe {
-        reentrance_guard = reentrance_guard - 1;
-    }
 }
