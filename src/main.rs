@@ -36,7 +36,7 @@ fn main() {
                 let should_process = move ||{
                     profile.triggers
                         .iter()
-                        .filter_map(|trigger| {
+                        .flat_map(|trigger| {
                             match trigger {
                                 &Trigger::Window { ref name } => Window::find(name)
                             }

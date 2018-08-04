@@ -15,20 +15,23 @@ pub struct Window {
 }
 
 impl Window {
-    pub fn find(name: &str) -> Option<Window> {
+    pub fn find(name: &str) -> Vec<Window> {
         // todo: how optimal is that string conversion?
         let title = OsString::from(name).as_os_str().encode_wide().chain(Some(0).into_iter()).collect::<Vec<_>>();
-        let handle = unsafe { FindWindowW(ptr::null_mut(), title.as_ptr()) };
 
-        if handle == ptr::null_mut() {
-            None
-        } else {
-            Some(
-                Window {
-                    handle: handle
-                }
-            )
+        let mut handles = Vec::new();
+        let mut handle = ptr::null_mut();
+        loop {
+            handle = unsafe { FindWindowExW(ptr::null_mut(), handle, ptr::null_mut(), title.as_ptr()) };
+            if handle == ptr::null_mut() {
+                break;
+            }
+            else {
+                handles.push(Window { handle });
+            }
         }
+
+        handles
     }
 
     pub fn foreground() -> Option<Window> {
