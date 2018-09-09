@@ -11,5 +11,5 @@ path = "application.log"
 pattern = "%d [%t] %l %M:%m"
 
 [root]
-level = "info"
+level = "trace"
 appenders = ["console", "file"]

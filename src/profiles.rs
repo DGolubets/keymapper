@@ -4,6 +4,7 @@ use std::fs::File;
 use std::io::Read;
 use self::xml::*;
 use errors::AppError;
+use std::time::Duration;
 
 #[derive(Debug)]
 pub struct Profile {
@@ -18,10 +19,22 @@ pub enum Trigger {
 }
 
 #[derive(Debug)]
-pub struct Binding {
+pub enum Binding {
+    Key(KeyBinding),
+    MouseWheel(MouseWheelBinding)
+}
+
+#[derive(Debug)]
+pub struct KeyBinding {
     pub vcode: u16,
     pub flags: u16,
     pub keys: Vec<Key>
+}
+
+#[derive(Debug)]
+pub struct MouseWheelBinding {
+    pub up: Option<bool>,
+    pub throttle: Option<Duration>
 }
 
 #[derive(Debug)]
@@ -70,6 +83,14 @@ fn read_trigger(e: &Element) -> Result<Trigger, AppError> {
 }
 
 fn read_binding(e: &Element) -> Result<Binding, AppError> {
+    match e.name.as_ref() {
+        "binding" => read_key_binding(e).map(Binding::Key),
+        "mouse-wheel" => read_mouse_wheel_binding(e).map(Binding::MouseWheel),
+        _ => Err(AppError::new(format!("Unknown binding element: {}", e.name)))
+    }
+}
+
+fn read_key_binding(e: &Element) -> Result<KeyBinding, AppError> {
     let vk_code = try!(e
         .get_attribute("vcode", None)
         .ok_or_else(||AppError::new("vcode is missing from binding")));
@@ -83,10 +104,19 @@ fn read_binding(e: &Element) -> Result<Binding, AppError> {
 
     let keys = try!(e.get_children("key", None).map(read_key).collect());
 
-    Ok(Binding {
+    Ok(KeyBinding {
         vcode: vk_code,
         flags: flags,
         keys: keys
+    })
+}
+
+fn read_mouse_wheel_binding(e: &Element) -> Result<MouseWheelBinding, AppError> {
+    let up = e.get_attribute("up", None).and_then(|v| v.parse().ok());
+    let throttle = e.get_attribute("throttle", None).and_then(|v| v.parse().ok()).map(Duration::from_millis);
+    Ok(MouseWheelBinding {
+        up,
+        throttle
     })
 }
 

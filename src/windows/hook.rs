@@ -5,26 +5,54 @@ extern crate user32;
 use std::ptr;
 use std::cell::RefCell;
 use std::thread::LocalKey;
+use std::rc::Rc;
 
 use util::*;
 
 use self::winapi::windef::*;
 use self::winapi::winuser::*;
+use self::winapi::minwindef::HIWORD;
 use self::user32::*;
 
 pub struct Hook {
-    _hook_int: WeakCollectionItem<HookInternal>
+    _hook_int: Vec<WeakCollectionItem<HookInternal>>
 }
 
 impl Hook {
-    pub fn set_keyboard_hook<H: Fn(&KbEvent) -> HookAction + 'static>(handler: H) -> Hook {
-        KB_HOOKS.with(|hooks|{
+
+    pub fn set_input_hook<H: Fn(&InputEvent) -> HookAction + 'static>(handler: H) -> Hook {
+
+        let handler= Rc::new(handler);
+
+        let handler_for_kb = handler.clone();
+        let keyboard_hook = Hook::set_keyboard_hook(move |e| {
+            let e = InputEvent::Keyboard(*e);
+            handler_for_kb(&e)
+        });
+
+        let handler_for_mouse = handler.clone();
+        let mouse_hook = Hook::set_mouse_hook(move |e| {
+            let e = InputEvent::Mouse(*e);
+            handler_for_mouse(&e)
+        });
+
+        let mut hooks = Vec::new();
+        hooks.extend(keyboard_hook._hook_int.into_iter());
+        hooks.extend(mouse_hook._hook_int.into_iter());
+
+        Hook {
+            _hook_int: hooks
+        }
+    }
+
+    pub fn set_keyboard_hook<H: Fn(&KeyboardEvent) -> HookAction + 'static>(handler: H) -> Hook {
+        KEYBOARD_HOOKS.with(|hooks|{
             let mut hooks = hooks.borrow_mut();
-            let handle = unsafe { SetWindowsHookExW(13, Some(keyboard_hook_proc), ptr::null_mut(), 0) };
+            let handle = unsafe { SetWindowsHookExW(WH_KEYBOARD_LL, Some(keyboard_hook_proc), ptr::null_mut(), 0) };
 
             let handler = move |_, _, l_param| {
                 let kbhs = unsafe { &*(l_param as *const KBDLLHOOKSTRUCT) };
-                let event = KbEvent {
+                let event = KeyboardEvent {
                     vk_code: kbhs.vkCode as i32,
                     flags: kbhs.flags as i32,
                 };
@@ -32,12 +60,46 @@ impl Hook {
             };
 
             let hook = HookInternal {
-                handle: handle,
+                handle,
                 handler: Box::new(handler)
             };
 
             Hook {
-                _hook_int: hooks.push(hook)
+                _hook_int: vec![hooks.push(hook)]
+            }
+        })
+    }
+
+    pub fn set_mouse_hook<H: Fn(&MouseEvent) -> HookAction + 'static>(handler: H) -> Hook {
+        MOUSE_HOOKS.with(|hooks|{
+            let mut hooks = hooks.borrow_mut();
+            let handle = unsafe { SetWindowsHookExW(WH_MOUSE_LL, Some(mouse_hook_proc), ptr::null_mut(), 0) };
+
+            let handler = move |_: i32, w_param: u64, l_param: i64| {
+                let mshs = unsafe { &*(l_param as *const MSLLHOOKSTRUCT) };
+
+                match w_param as u32 {
+                    WM_MOUSEWHEEL => {
+                        let event = MouseEvent::MouseWheel {
+                            x: mshs.pt.x,
+                            y: mshs.pt.y,
+                            delta: HIWORD(mshs.mouseData) as i16
+                        };
+                        handler(&event)
+                    },
+                    _ => {
+                        HookAction::Forward
+                    }
+                }
+            };
+
+            let hook = HookInternal {
+                handle,
+                handler: Box::new(handler)
+            };
+
+            Hook {
+                _hook_int: vec![hooks.push(hook)]
             }
         })
     }
@@ -57,18 +119,25 @@ impl Drop for HookInternal {
     }
 }
 
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum HookAction {
     Block,
     Forward
 }
 
-pub struct KbEvent {
+#[derive(Debug)]
+pub enum InputEvent {
+    Keyboard(KeyboardEvent),
+    Mouse(MouseEvent),
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct KeyboardEvent {
     pub vk_code: i32,
     pub flags: i32
 }
 
-impl KbEvent {
+impl KeyboardEvent {
     pub fn alt(&self) -> bool {
         const LLKHF_ALTDOWN: i32 = 0x20;
         self.flags & LLKHF_ALTDOWN > 0
@@ -80,9 +149,22 @@ impl KbEvent {
     }
 }
 
+#[derive(Debug, Copy, Clone)]
+pub enum MouseEvent {
+    MouseWheel {
+        x: i32,
+        y: i32,
+        delta: i16
+    }
+}
+
 /* PRIVATE */
 unsafe extern "system" fn keyboard_hook_proc(n_code: i32, w_param: u64, l_param: i64) -> i64 {
-    base_hook_proc(&KB_HOOKS, n_code, w_param, l_param)
+    base_hook_proc(&KEYBOARD_HOOKS, n_code, w_param, l_param)
+}
+
+unsafe extern "system" fn mouse_hook_proc(n_code: i32, w_param: u64, l_param: i64) -> i64 {
+    base_hook_proc(&MOUSE_HOOKS, n_code, w_param, l_param)
 }
 
 unsafe fn base_hook_proc(local: &'static LocalKey<RefCell<WeakCollection<HookInternal>>>, n_code: i32, w_param: u64, l_param: i64) -> i64 {
@@ -113,4 +195,5 @@ unsafe fn base_hook_proc(local: &'static LocalKey<RefCell<WeakCollection<HookInt
     CallNextHookEx(ptr::null_mut(), n_code, w_param, l_param)
 }
 
-thread_local!(static KB_HOOKS: RefCell<WeakCollection<HookInternal>> = RefCell::new(WeakCollection::new()));
+thread_local!(static KEYBOARD_HOOKS: RefCell<WeakCollection<HookInternal>> = RefCell::new(WeakCollection::new()));
+thread_local!(static MOUSE_HOOKS: RefCell<WeakCollection<HookInternal>> = RefCell::new(WeakCollection::new()));

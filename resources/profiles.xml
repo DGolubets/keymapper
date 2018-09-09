@@ -43,6 +43,7 @@
         <key vcode="0x51" />
         <key vcode="0x7B" />
       </binding>
+      <mouse-wheel up="true" throttle="500" />
     </bindings>
   </profile>
 </profiles>
