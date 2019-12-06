@@ -1,12 +1,9 @@
 extern crate config;
 
-use std::path::Path;
 use config::reader;
-use config::types::Value;
-use config::types::ScalarValue;
+use std::path::Path;
 
-pub struct Settings {
-}
+pub struct Settings {}
 
 impl Settings {
     pub fn load() -> Result<Settings, &'static str> {
@@ -14,11 +11,8 @@ impl Settings {
         let cfg = reader::from_file(path);
 
         match cfg {
-            Ok(cfg) => {
-                Ok(Settings {
-                })
-            },
-            Err(e) => Err(e.desc)
+            Ok(_cfg) => Ok(Settings {}),
+            Err(e) => Err(e.desc),
         }
     }
 }

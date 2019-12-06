@@ -1,28 +1,29 @@
 #[macro_use]
 extern crate log;
-extern crate log4rs;
-extern crate lazy_static;
 extern crate config;
-extern crate winapi;
+extern crate lazy_static;
+extern crate log4rs;
 extern crate user32;
+extern crate winapi;
 
 mod errors;
-mod settings;
 mod profiles;
-mod windows;
+mod settings;
 mod util;
+mod windows;
 
 use profiles::*;
 use settings::Settings;
-use windows::{ Window, Hook, HookAction, InputEvent, MouseEvent };
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::time::Instant;
-use std::cell::RefCell;
+use windows::{Hook, HookAction, InputEvent, MouseEvent, Window};
 
 fn main() {
-    log4rs::init_file("resources/log.toml", Default::default()).expect("Can't load logging config.");
+    log4rs::init_file("resources/log.toml", Default::default())
+        .expect("Can't load logging config.");
     info!("Starting Keymapper..");
-    let settings = Settings::load().expect("Can't load settings.");
+    let _settings = Settings::load().expect("Can't load settings.");
     let profiles = profiles::load_profiles().expect("Can't load profiles.");
     let re_guard = util::ReentranceGuard::new();
 
@@ -33,18 +34,17 @@ fn main() {
             .iter()
             .fold(HookAction::Forward, |result, profile| {
                 // return early
-                if result == HookAction::Block  {
+                if result == HookAction::Block {
                     return result;
                 }
 
                 // try another profile
-                let should_process = move ||{
-                    profile.triggers
+                let should_process = move || {
+                    profile
+                        .triggers
                         .iter()
-                        .flat_map(|trigger| {
-                            match trigger {
-                                &Trigger::Window { ref name } => Window::find(name)
-                            }
+                        .flat_map(|trigger| match trigger {
+                            &Trigger::Window { ref name } => Window::find(name),
                         })
                         .any(|w| w.is_foreground())
                 };
@@ -59,7 +59,12 @@ fn main() {
 
                                 if key_matched && should_process() {
                                     if let Some(_) = re_guard.try_lock() {
-                                        trace!("Profile \"{}\" blocked key: {:X} + {:X}", profile.name,  e.vk_code, e.flags);
+                                        trace!(
+                                            "Profile \"{}\" blocked key: {:X} + {:X}",
+                                            profile.name,
+                                            e.vk_code,
+                                            e.flags
+                                        );
                                         for key in &binding.keys {
                                             trace!("Sending key: {:X}", key.vcode);
                                             windows::send_input_key(key.vcode as i32, e.up());
@@ -69,7 +74,7 @@ fn main() {
                                 }
                             }
                         }
-                    },
+                    }
                     InputEvent::Mouse(MouseEvent::MouseWheel { delta, .. }) => {
                         for binding in &profile.bindings {
                             if let Binding::MouseWheel(binding) = binding {
@@ -79,16 +84,23 @@ fn main() {
                                 if matched && should_process() {
                                     let now = Instant::now();
 
-                                    let should_throttle = match last_mouse_wheel_time.borrow().get(&up) {
-                                        Some(&last) => binding.throttle.iter().any(|d| d > &now.duration_since(last)),
-                                        _ => false
-                                    };
+                                    let should_throttle =
+                                        match last_mouse_wheel_time.borrow().get(&up) {
+                                            Some(&last) => binding
+                                                .throttle
+                                                .iter()
+                                                .any(|d| d > &now.duration_since(last)),
+                                            _ => false,
+                                        };
 
                                     if should_throttle {
-                                        trace!("Profile \"{}\" throttle mouse wheel (up={})", profile.name, up);
+                                        trace!(
+                                            "Profile \"{}\" throttle mouse wheel (up={})",
+                                            profile.name,
+                                            up
+                                        );
                                         return HookAction::Block;
-                                    }
-                                    else {
+                                    } else {
                                         last_mouse_wheel_time.borrow_mut().insert(up, now);
                                     }
                                 }

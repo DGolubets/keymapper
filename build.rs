@@ -17,6 +17,10 @@ fn main() {
     let files_to_copy = vec!["log.toml", "application.conf", "profiles.xml"];
 
     for file_name in files_to_copy {
-        fs::copy(res_path.join(file_name), target_resources_path.join(file_name)).unwrap();
+        fs::copy(
+            res_path.join(file_name),
+            target_resources_path.join(file_name),
+        )
+        .unwrap();
     }
 }

@@ -1,18 +1,18 @@
-use std::rc::Rc;
 use std::cell::RefCell;
+use std::rc::Rc;
 
 pub struct ReentranceGuard {
-    counter: Rc<RefCell<u32>>
+    counter: Rc<RefCell<u32>>,
 }
 
 pub struct ReentranceGuardLock<'a> {
-    guard: &'a ReentranceGuard
+    guard: &'a ReentranceGuard,
 }
 
 impl ReentranceGuard {
     pub fn new() -> ReentranceGuard {
         ReentranceGuard {
-            counter: Rc::new(RefCell::new(0))
+            counter: Rc::new(RefCell::new(0)),
         }
     }
 
@@ -21,12 +21,11 @@ impl ReentranceGuard {
         if *c == 0 {
             *c += 1;
             assert!(*c == 1);
-            let lock = ReentranceGuardLock {
-                guard: self
-            };
+            let lock = ReentranceGuardLock { guard: self };
             Some(lock)
+        } else {
+            None
         }
-        else { None }
     }
 
     fn drop_lock(&self) {
@@ -65,9 +64,7 @@ mod tests {
     #[test]
     fn drop_lock() {
         let guard = ReentranceGuard::new();
-        if let Some(lock1) = guard.try_lock() {
-
-        }
+        if let Some(lock1) = guard.try_lock() {}
         let lock2 = guard.try_lock();
         assert!(lock2.is_some());
     }

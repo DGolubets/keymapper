@@ -3,6 +3,7 @@ name = "keymapper"
 description = "Keyboard remapper utility for Windows."
 version = "0.0.1"
 authors = [ "Dmitry Golubets <dgolubets@gmail.com>" ]
+edition = "2018"
 
 repository = "https://bitbucket.org/DGolubets/keymapper"
 homepage = "https://bitbucket.org/DGolubets/keymapper"

@@ -1,17 +1,17 @@
 use std::error::Error;
-use std::io;
 use std::fmt;
+use std::io;
 
 #[derive(Debug)]
 pub enum AppError {
     Custom { description: String },
-    IoError(io::Error)
+    IoError(io::Error),
 }
 
 impl AppError {
     pub fn new<S: Into<String>>(text: S) -> AppError {
         AppError::Custom {
-            description: text.into()
+            description: text.into(),
         }
     }
 }
@@ -39,10 +39,10 @@ impl Error for AppError {
         }
     }
 
-    fn cause(&self) -> Option<&Error> {
+    fn cause(&self) -> Option<&dyn Error> {
         match *self {
-            AppError::Custom{..} => None,
-            AppError::IoError(ref err) =>  Some(err),
+            AppError::Custom { .. } => None,
+            AppError::IoError(ref err) => Some(err),
         }
     }
 }

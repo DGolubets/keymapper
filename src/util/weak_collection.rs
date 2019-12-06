@@ -1,26 +1,23 @@
 #![allow(dead_code)]
-use std::rc::{Rc, Weak};
-use std::cell::{Cell, RefCell, Ref};
+use std::cell::{Cell, Ref, RefCell};
 use std::mem;
 use std::ops::Deref;
+use std::rc::{Rc, Weak};
 
 /// A collection type that holds no strong references to items.
 /// An item lives in collection for as long as there is an external reference to it.
 pub struct WeakCollection<T> {
-    collection: Rc<RefCell<WeakCollectionInternal<T>>>
+    collection: Rc<RefCell<WeakCollectionInternal<T>>>,
 }
 
 impl<T> WeakCollection<T> {
-
     pub fn new() -> Self {
-        let internal_collection = WeakCollectionInternal {
-            items: Vec::new()
-        };
+        let internal_collection = WeakCollectionInternal { items: Vec::new() };
 
         let internal_collection = Rc::new(RefCell::new(internal_collection));
 
         WeakCollection {
-            collection: internal_collection
+            collection: internal_collection,
         }
     }
 
@@ -30,15 +27,13 @@ impl<T> WeakCollection<T> {
         let item = WeakCollectionItemInternal {
             owner: Rc::downgrade(&self.collection),
             index: Cell::new(collection.items.len()),
-            value: value
+            value: value,
         };
 
         let item = Rc::new(item);
         collection.items.push(Rc::downgrade(&item));
 
-        WeakCollectionItem {
-            item: item
-        }
+        WeakCollectionItem { item: item }
     }
 
     pub fn len(&self) -> usize {
@@ -55,11 +50,11 @@ impl<T> WeakCollection<T> {
 }
 
 struct WeakCollectionInternal<T> {
-    items: Vec<Weak<WeakCollectionItemInternal<T>>>
+    items: Vec<Weak<WeakCollectionItemInternal<T>>>,
 }
 
 pub struct WeakCollectionItem<T> {
-    item: Rc<WeakCollectionItemInternal<T>>
+    item: Rc<WeakCollectionItemInternal<T>>,
 }
 
 impl<T> WeakCollectionItem<T> {
@@ -79,7 +74,7 @@ impl<T> Deref for WeakCollectionItem<T> {
 struct WeakCollectionItemInternal<T> {
     owner: Weak<RefCell<WeakCollectionInternal<T>>>,
     index: Cell<usize>,
-    value: T
+    value: T,
 }
 
 impl<T> Drop for WeakCollectionItemInternal<T> {
@@ -91,14 +86,13 @@ impl<T> Drop for WeakCollectionItemInternal<T> {
 
             if owner.items.len() > 0 {
                 // set valid index on swapped item
-                if let Some(item) = owner.items[index].upgrade(){
+                if let Some(item) = owner.items[index].upgrade() {
                     item.index.set(index);
                 }
             }
         }
     }
 }
-
 
 impl<'a, T: 'a> IntoIterator for &'a WeakCollection<T> {
     type Item = WeakCollectionItem<T>;
@@ -111,11 +105,11 @@ impl<'a, T: 'a> IntoIterator for &'a WeakCollection<T> {
 
 pub struct WeakCollectionIterator<'a, T: 'a> {
     iter: ::std::slice::Iter<'a, Weak<WeakCollectionItemInternal<T>>>,
-    _rm: Ref<'a, WeakCollectionInternal<T>> // own Ref here to keep RefCell state valid
+    _rm: Ref<'a, WeakCollectionInternal<T>>, // own Ref here to keep RefCell state valid
 }
 
-impl <'a, T: 'a> WeakCollectionIterator<'a, T> {
-    fn new(t: Ref<'a, WeakCollectionInternal<T>>) -> WeakCollectionIterator<'a, T>{
+impl<'a, T: 'a> WeakCollectionIterator<'a, T> {
+    fn new(t: Ref<'a, WeakCollectionInternal<T>>) -> WeakCollectionIterator<'a, T> {
         WeakCollectionIterator {
             iter: unsafe { mem::transmute((&t.items).into_iter()) },
             _rm: t,
@@ -131,14 +125,12 @@ impl<'a, T: 'a> Iterator for WeakCollectionIterator<'a, T> {
             match self.iter.next() {
                 Some(wrc) => match wrc.upgrade() {
                     Some(rc) => {
-                        let item = WeakCollectionItem {
-                            item: rc
-                        };
-                        return Some(item)
-                    },
-                    None => ()
+                        let item = WeakCollectionItem { item: rc };
+                        return Some(item);
+                    }
+                    None => (),
                 },
-                None => return None
+                None => return None,
             }
         }
     }
@@ -146,7 +138,7 @@ impl<'a, T: 'a> Iterator for WeakCollectionIterator<'a, T> {
 
 #[cfg(test)]
 mod tests {
-    use util::weak_collection::*;
+    use crate::util::weak_collection::*;
 
     #[test]
     fn drops_dead_elements() {

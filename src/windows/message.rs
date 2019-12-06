@@ -1,22 +1,21 @@
-extern crate winapi;
 extern crate user32;
+extern crate winapi;
 
-use std::ptr;
 use std::mem;
+use std::ptr;
 
-use winapi::winuser::*;
 use user32::*;
+use winapi::winuser::*;
 
 pub fn message_loop() {
     unsafe {
         let mut msg: MSG = mem::zeroed();
-        while GetMessageW(&mut msg, ptr::null_mut(), 0, 0) > 0
-        {
+        while GetMessageW(&mut msg, ptr::null_mut(), 0, 0) > 0 {
             DispatchMessageW(&msg);
         }
     }
 }
 
 pub fn post_quit_message() {
-    unsafe{ PostQuitMessage(0) };
+    unsafe { PostQuitMessage(0) };
 }

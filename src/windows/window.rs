@@ -1,32 +1,36 @@
-extern crate winapi;
 extern crate user32;
+extern crate winapi;
 
 use std::ffi::OsString;
+use std::mem;
 use std::os::windows::ffi::OsStrExt;
 use std::ptr;
-use std::mem;
 
+use self::user32::*;
 use self::winapi::windef::*;
 use self::winapi::winuser::*;
-use self::user32::*;
 
 pub struct Window {
-    handle: HWND
+    handle: HWND,
 }
 
 impl Window {
     pub fn find(name: &str) -> Vec<Window> {
         // todo: how optimal is that string conversion?
-        let title = OsString::from(name).as_os_str().encode_wide().chain(Some(0).into_iter()).collect::<Vec<_>>();
+        let title = OsString::from(name)
+            .as_os_str()
+            .encode_wide()
+            .chain(Some(0).into_iter())
+            .collect::<Vec<_>>();
 
         let mut handles = Vec::new();
         let mut handle = ptr::null_mut();
         loop {
-            handle = unsafe { FindWindowExW(ptr::null_mut(), handle, ptr::null_mut(), title.as_ptr()) };
+            handle =
+                unsafe { FindWindowExW(ptr::null_mut(), handle, ptr::null_mut(), title.as_ptr()) };
             if handle == ptr::null_mut() {
                 break;
-            }
-            else {
+            } else {
                 handles.push(Window { handle });
             }
         }
@@ -40,11 +44,7 @@ impl Window {
         if handle == ptr::null_mut() {
             None
         } else {
-            Some(
-                Window {
-                    handle: handle
-                }
-            )
+            Some(Window { handle: handle })
         }
     }
 
