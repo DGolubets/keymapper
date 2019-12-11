@@ -1,14 +1,10 @@
-extern crate user32;
-extern crate winapi;
-
 use std::ffi::OsString;
 use std::mem;
 use std::os::windows::ffi::OsStrExt;
 use std::ptr;
 
-use self::user32::*;
-use self::winapi::windef::*;
-use self::winapi::winuser::*;
+use winapi::shared::windef::*;
+use winapi::um::winuser::*;
 
 pub struct Window {
     handle: HWND,

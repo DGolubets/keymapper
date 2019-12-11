@@ -1,11 +1,7 @@
-extern crate user32;
-extern crate winapi;
-
 use std::mem;
 use std::ptr;
 
-use user32::*;
-use winapi::winuser::*;
+use winapi::um::winuser::*;
 
 pub fn message_loop() {
     unsafe {

@@ -1,14 +1,15 @@
 # Scan this file for changes every 30 seconds
-refresh_rate = 30
+refresh_rate = "30s"
 
 # An appender named "console" that writes to stdout
-[appender.console]
+[appenders]
+[appenders.console]
 kind = "console"
 
-[appender.file]
+[appenders.file]
 kind = "file"
 path = "application.log"
-pattern = "%d [%t] %l %M:%m"
+encoder.pattern = "%d [%t] %l %M:%m"
 
 [root]
 level = "trace"

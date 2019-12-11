@@ -1,11 +1,3 @@
-#[macro_use]
-extern crate log;
-extern crate config;
-extern crate lazy_static;
-extern crate log4rs;
-extern crate user32;
-extern crate winapi;
-
 mod errors;
 mod profiles;
 mod settings;
@@ -22,7 +14,7 @@ use windows::{Hook, HookAction, InputEvent, MouseEvent, Window};
 fn main() {
     log4rs::init_file("resources/log.toml", Default::default())
         .expect("Can't load logging config.");
-    info!("Starting Keymapper..");
+    log::info!("Starting Keymapper..");
     let _settings = Settings::load().expect("Can't load settings.");
     let profiles = profiles::load_profiles().expect("Can't load profiles.");
     let re_guard = util::ReentranceGuard::new();
@@ -59,14 +51,14 @@ fn main() {
 
                                 if key_matched && should_process() {
                                     if let Some(_) = re_guard.try_lock() {
-                                        trace!(
+                                        log::trace!(
                                             "Profile \"{}\" blocked key: {:X} + {:X}",
                                             profile.name,
                                             e.vk_code,
                                             e.flags
                                         );
                                         for key in &binding.keys {
-                                            trace!("Sending key: {:X}", key.vcode);
+                                            log::trace!("Sending key: {:X}", key.vcode);
                                             windows::send_input_key(key.vcode as i32, e.up());
                                         }
                                         return HookAction::Block;
@@ -94,7 +86,7 @@ fn main() {
                                         };
 
                                     if should_throttle {
-                                        trace!(
+                                        log::trace!(
                                             "Profile \"{}\" throttle mouse wheel (up={})",
                                             profile.name,
                                             up
@@ -116,5 +108,5 @@ fn main() {
 
     windows::message_loop();
 
-    info!("Shutting down Keymapper..");
+    log::info!("Shutting down Keymapper..");
 }

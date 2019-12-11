@@ -3,10 +3,9 @@ use std::ptr;
 use std::rc::Rc;
 use std::thread::LocalKey;
 
-use user32::*;
-use winapi::minwindef::HIWORD;
-use winapi::windef::*;
-use winapi::winuser::*;
+use winapi::shared::minwindef::HIWORD;
+use winapi::shared::windef::*;
+use winapi::um::winuser::*;
 
 use crate::util::*;
 
@@ -71,7 +70,7 @@ impl Hook {
                 SetWindowsHookExW(WH_MOUSE_LL, Some(mouse_hook_proc), ptr::null_mut(), 0)
             };
 
-            let handler = move |_: i32, w_param: u64, l_param: i64| {
+            let handler = move |_: i32, w_param: usize, l_param: isize| {
                 let mshs = unsafe { &*(l_param as *const MSLLHOOKSTRUCT) };
 
                 match w_param as u32 {
@@ -101,12 +100,12 @@ impl Hook {
 
 pub struct HookInternal {
     handle: HHOOK,
-    handler: Box<dyn Fn(i32, u64, i64) -> HookAction>,
+    handler: Box<dyn Fn(i32, usize, isize) -> HookAction>,
 }
 
 impl Drop for HookInternal {
     fn drop(&mut self) {
-        debug!("Dropping hook..");
+        log::debug!("Dropping hook..");
         unsafe {
             UnhookWindowsHookEx(self.handle);
         }
@@ -149,20 +148,20 @@ pub enum MouseEvent {
 }
 
 /* PRIVATE */
-unsafe extern "system" fn keyboard_hook_proc(n_code: i32, w_param: u64, l_param: i64) -> i64 {
+unsafe extern "system" fn keyboard_hook_proc(n_code: i32, w_param: usize, l_param: isize) -> isize {
     base_hook_proc(&KEYBOARD_HOOKS, n_code, w_param, l_param)
 }
 
-unsafe extern "system" fn mouse_hook_proc(n_code: i32, w_param: u64, l_param: i64) -> i64 {
+unsafe extern "system" fn mouse_hook_proc(n_code: i32, w_param: usize, l_param: isize) -> isize {
     base_hook_proc(&MOUSE_HOOKS, n_code, w_param, l_param)
 }
 
 unsafe fn base_hook_proc(
     local: &'static LocalKey<RefCell<WeakCollection<HookInternal>>>,
     n_code: i32,
-    w_param: u64,
-    l_param: i64,
-) -> i64 {
+    w_param: usize,
+    l_param: isize,
+) -> isize {
     // If nCode is less than zero, the hook procedure must pass the message to the CallNextHookEx function without further processing
     // and should return the value returned by CallNextHookEx.
     if n_code == 0 {

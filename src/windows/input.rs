@@ -1,19 +1,14 @@
-extern crate log;
-extern crate user32;
-extern crate winapi;
-
 use std::mem;
 
-use self::user32::*;
-use self::winapi::winuser::*;
+use winapi::um::winuser::*;
 
 pub fn send_input_key(virtual_key: i32, up: bool) {
     unsafe {
         let mut input = INPUT {
             type_: INPUT_KEYBOARD,
-            u: Default::default(),
+            u: std::mem::zeroed(),
         };
-        *input.ki_mut() = KEYBDINPUT {
+        *input.u.ki_mut() = KEYBDINPUT {
             wVk: virtual_key as u16,
             dwFlags: if up { KEYEVENTF_KEYUP } else { 0 },
             dwExtraInfo: 0,

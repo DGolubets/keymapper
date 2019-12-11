@@ -16,10 +16,10 @@ build = "build.rs"
 publish = false
 
 [dependencies]
-config = "0.1.2"
-log = "0.3.5"
-log4rs = "0.3.3"
-lazy_static = "0.1.15"
-winapi = "0.2.5"
+config = "0.10.1"
+log = "0.4.8"
+log4rs = { version = "0.9.0", features = ["toml_format"] }
+lazy_static = "1.4.0"
+winapi = { version = "0.3", features = ["winuser"] }
 user32-sys = "0.1.2"
 RustyXML = "0.1.1"
