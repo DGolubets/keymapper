@@ -1,49 +1,126 @@
 <profiles>
-  <profile name="Games">
-    <triggers>
-      <window name="Witcher 3" />
-      <window name="Overwatch" />
-    </triggers>
-    <bindings>
-      <binding vcode="0x5B">
-        <!-- Block Win-Left -->
-      </binding>
-      <binding vcode="0x09" flags="0x20">
-        <!-- Block Alt-Tab -->
-      </binding>
-    </bindings>
-  </profile>
-  <profile name="WoW">
-    <triggers>
-      <window name="World of Warcraft" />
-    </triggers>
-    <bindings>
-      <binding vcode="0x5B">
-        <!-- Block Win-Left -->
-      </binding>
-      <binding vcode="0x09" flags="0x20">
-        <!-- Block Alt-Tab -->
-      </binding>
-      <binding vcode="0x09">
-        <!-- Remap Tab to Tab, Back -->
-        <key vcode="0x09" />
-        <key vcode="0x08" />
-      </binding>
-      <binding vcode="0x14">
-        <!-- Remap CapsLock to F11 -->
-        <key vcode="0x7A" />
-      </binding>
-      <binding vcode="0x51">
-        <!-- Remap Q to Q, F12 -->
-        <key vcode="0x51" />
-        <key vcode="0x7B" />
-      </binding>
-	  <binding vcode="0x51" flags="0x20">
-        <!-- Remap Alt-Q to Alt-Q, Alt-F12 -->
-        <key vcode="0x51" />
-        <key vcode="0x7B" />
-      </binding>
-      <mouse-wheel up="true" throttle="500" />
-    </bindings>
-  </profile>
+    <profile name="Games">
+        <triggers>
+            <window name="The Witcher 3"/>
+            <window name="Overwatch"/>
+        </triggers>
+        <bindings>
+            <binding vk_code="0x5B">
+                <!-- Block Win-Left -->
+            </binding>
+            <binding vk_code="0x09" flags="0x20">
+                <!-- Block Alt-Tab -->
+            </binding>
+        </bindings>
+    </profile>
+    <profile name="WoW">
+        <triggers>
+            <window name="World of Warcraft"/>
+        </triggers>
+        <bindings>
+            <binding vk_code="0x5B">
+                <!-- Block Win-Left -->
+            </binding>
+            <binding vk_code="0x09" flags="0x20">
+                <!-- Remap Alt-Tab to Back -->
+                <key vk_code="0x08"/>
+            </binding>
+            <binding vk_code="0x14">
+                <!-- Remap CapsLock to F11 -->
+                <key vk_code="0x7A"/>
+            </binding>
+            <mouse-wheel up="true" throttle="200"/>
+        </bindings>
+    </profile>
+    <profile name="MK11">
+        <triggers>
+            <window name="Mortal Kombat 11"/>
+        </triggers>
+        <bindings>
+            <!-- Q -->
+            <binding vk_code="0x51" up="false"/>
+            <binding vk_code="0x51" up="true">
+
+                <!-- S -->
+                <key vk_code="0x53" up="false"/>
+                <key vk_code="0x53" up="true" delay="50"/>
+
+                <!-- D -->
+                <key vk_code="0x44" up="false" delay="50"/>
+                <key vk_code="0x44" up="true" delay="50"/>
+
+                <!-- K -->
+                <key vk_code="0x4B" up="false" delay="50"/>
+                <key vk_code="0x4B" up="true" delay="50"/>
+
+                <!-- ; -->
+                <key vk_code="0xBA" up="false" delay="50"/>
+                <key vk_code="0xBA" up="true" delay="50"/>
+            </binding>
+
+            <!-- E -->
+            <binding vk_code="0x45" up="false"/>
+            <binding vk_code="0x45" up="true">
+
+                <!-- S -->
+                <key vk_code="0x53" up="false"/>
+                <key vk_code="0x53" up="true" delay="50"/>
+
+                <!-- A -->
+                <key vk_code="0x41" up="false" delay="50"/>
+                <key vk_code="0x41" up="true" delay="50"/>
+
+                <!-- K -->
+                <key vk_code="0x4B" up="false" delay="50"/>
+                <key vk_code="0x4B" up="true" delay="50"/>
+
+                <!-- ; -->
+                <key vk_code="0xBA" up="false" delay="50"/>
+                <key vk_code="0xBA" up="true" delay="50"/>
+            </binding>
+
+            <!-- 2 -->
+            <binding vk_code="0x32" up="false"/>
+            <binding vk_code="0x32" up="true">
+
+                <!-- A -->
+                <key vk_code="0x41" up="false"/>
+                <key vk_code="0x41" up="true" delay="50"/>
+
+                <!-- D -->
+                <key vk_code="0x44" up="false" delay="50"/>
+                <key vk_code="0x44" up="true" delay="50"/>
+
+                <!-- J -->
+                <key vk_code="0x4A" up="false" delay="50"/>
+                <key vk_code="0x4A" up="true" delay="50"/>
+
+                <!-- ; -->
+                <key vk_code="0xBA" up="false" delay="500"/>
+                <key vk_code="0xBA" up="true" delay="50"/>
+
+            </binding>
+
+            <!-- 1 -->
+            <binding vk_code="0x31" up="false"/>
+            <binding vk_code="0x31" up="true">
+
+                <!-- D -->
+                <key vk_code="0x44" up="false"/>
+                <key vk_code="0x44" up="true" delay="50"/>
+
+                <!-- A -->
+                <key vk_code="0x41" up="false" delay="50"/>
+                <key vk_code="0x41" up="true" delay="50"/>
+
+                <!-- J -->
+                <key vk_code="0x4A" up="false" delay="50"/>
+                <key vk_code="0x4A" up="true" delay="50"/>
+
+                <!-- ; -->
+                <key vk_code="0xBA" up="false" delay="500"/>
+                <key vk_code="0xBA" up="true" delay="50"/>
+            </binding>
+        </bindings>
+    </profile>
 </profiles>

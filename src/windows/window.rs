@@ -10,6 +10,7 @@ pub struct Window {
     handle: HWND,
 }
 
+#[allow(dead_code)]
 impl Window {
     pub fn find(name: &str) -> Vec<Window> {
         // todo: how optimal is that string conversion?

@@ -14,19 +14,19 @@ pub struct Hook {
 }
 
 impl Hook {
-    pub fn set_input_hook<H: Fn(&InputEvent) -> HookAction + 'static>(handler: H) -> Hook {
-        let handler = Rc::new(handler);
+    pub fn set_input_hook<H: FnMut(&InputEvent) -> HookAction + 'static>(handler: H) -> Hook {
+        let handler = Rc::new(RefCell::new(handler));
 
         let handler_for_kb = handler.clone();
         let keyboard_hook = Hook::set_keyboard_hook(move |e| {
             let e = InputEvent::Keyboard(*e);
-            handler_for_kb(&e)
+            (&mut handler_for_kb.borrow_mut() as &mut H)(&e)
         });
 
         let handler_for_mouse = handler.clone();
         let mouse_hook = Hook::set_mouse_hook(move |e| {
             let e = InputEvent::Mouse(*e);
-            handler_for_mouse(&e)
+            (&mut handler_for_mouse.borrow_mut() as &mut H)(&e)
         });
 
         let mut hooks = Vec::new();
@@ -45,9 +45,11 @@ impl Hook {
 
             let handler = move |_, _, l_param| {
                 let kbhs = unsafe { &*(l_param as *const KBDLLHOOKSTRUCT) };
+
                 let event = KeyboardEvent {
-                    vk_code: kbhs.vkCode as i32,
-                    flags: kbhs.flags as i32,
+                    vk_code: kbhs.vkCode,
+                    flags: kbhs.flags,
+                    extra: kbhs.dwExtraInfo,
                 };
                 handler(&event)
             };
@@ -126,19 +128,23 @@ pub enum InputEvent {
 
 #[derive(Debug, Copy, Clone)]
 pub struct KeyboardEvent {
-    pub vk_code: i32,
-    pub flags: i32,
+    pub vk_code: u32,
+    pub flags: u32,
+    pub extra: usize,
 }
 
+#[allow(dead_code)]
 impl KeyboardEvent {
     pub fn alt(&self) -> bool {
-        const LLKHF_ALTDOWN: i32 = 0x20;
         self.flags & LLKHF_ALTDOWN > 0
     }
 
     pub fn up(&self) -> bool {
-        const LLKHF_UP: i32 = 0x80;
         self.flags & LLKHF_UP > 0
+    }
+
+    pub fn syntetic(&self) -> bool {
+        self.extra != 0
     }
 }
 

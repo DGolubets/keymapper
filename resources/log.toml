@@ -9,8 +9,13 @@ kind = "console"
 [appenders.file]
 kind = "file"
 path = "application.log"
-encoder.pattern = "%d [%t] %l %M:%m"
+
+[appenders.file.encoder]
+pattern = "{d} {t} {l} {M}:{m}{n}"
 
 [root]
-level = "trace"
+level = "warn"
 appenders = ["console", "file"]
+
+[loggers.keymapper]
+level = "trace"

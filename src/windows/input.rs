@@ -11,7 +11,7 @@ pub fn send_input_key(virtual_key: i32, up: bool) {
         *input.u.ki_mut() = KEYBDINPUT {
             wVk: virtual_key as u16,
             dwFlags: if up { KEYEVENTF_KEYUP } else { 0 },
-            dwExtraInfo: 0,
+            dwExtraInfo: 1,
             wScan: 0,
             time: 0,
         };

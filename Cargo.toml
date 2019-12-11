@@ -16,6 +16,8 @@ build = "build.rs"
 publish = false
 
 [dependencies]
+futures = "0.3"
+tokio = { version = "0.2", features = ["full"] }
 config = "0.10.1"
 log = "0.4.8"
 log4rs = { version = "0.9.0", features = ["toml_format"] }

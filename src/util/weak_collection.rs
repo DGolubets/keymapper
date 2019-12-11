@@ -167,7 +167,7 @@ mod tests {
     fn shrink_to_fit() {
         let mut collection = WeakCollection::new();
         let a = collection.push("abc");
-        let b = collection.push("def");
+        let _b = collection.push("def");
 
         drop(a);
         collection.shrink_to_fit();

@@ -12,6 +12,7 @@ pub fn message_loop() {
     }
 }
 
+#[allow(dead_code)]
 pub fn post_quit_message() {
     unsafe { PostQuitMessage(0) };
 }

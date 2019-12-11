@@ -26,8 +26,9 @@ pub enum Binding {
 
 #[derive(Debug)]
 pub struct KeyBinding {
-    pub vcode: u16,
-    pub flags: u16,
+    pub vk_code: u32,
+    pub up: Option<bool>,
+    pub alt: Option<bool>,
     pub keys: Vec<Key>,
 }
 
@@ -37,9 +38,11 @@ pub struct MouseWheelBinding {
     pub throttle: Option<Duration>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Key {
-    pub vcode: u16,
+    pub vk_code: u32,
+    pub up: Option<bool>,
+    pub delay: Option<Duration>,
 }
 
 pub fn load_profiles() -> Result<Vec<Profile>, AppError> {
@@ -89,15 +92,13 @@ fn read_binding(e: &Element) -> Result<Binding, AppError> {
 
 fn read_key_binding(e: &Element) -> Result<KeyBinding, AppError> {
     let vk_code = e
-        .get_attribute("vcode", None)
+        .get_attribute("vk_code", None)
         .ok_or_else(|| AppError::new("vcode is missing from binding"))?;
     let vk_code = parse_hex(vk_code)?;
 
-    let flags = match e.get_attribute("flags", None) {
-        Some(text) => parse_hex(text),
-        None => Ok(0x00),
-    };
-    let flags = flags?;
+    let up = e.get_attribute("up", None).and_then(|s| s.parse().ok());
+
+    let alt = e.get_attribute("alt", None).and_then(|s| s.parse().ok());
 
     let keys = e
         .get_children("key", None)
@@ -105,9 +106,10 @@ fn read_key_binding(e: &Element) -> Result<KeyBinding, AppError> {
         .collect::<Result<_, _>>()?;
 
     Ok(KeyBinding {
-        vcode: vk_code,
-        flags: flags,
-        keys: keys,
+        vk_code,
+        up,
+        alt,
+        keys,
     })
 }
 
@@ -121,12 +123,23 @@ fn read_mouse_wheel_binding(e: &Element) -> Result<MouseWheelBinding, AppError> 
 }
 
 fn read_key(e: &Element) -> Result<Key, AppError> {
-    let vk_code = e
-        .get_attribute("vcode", None)
+    let vcode = e
+        .get_attribute("vk_code", None)
         .ok_or_else(|| AppError::new("vcode is missing from key"))?;
-    let vk_code = parse_hex(vk_code)?;
+    let vcode = parse_hex(vcode)?;
 
-    Ok(Key { vcode: vk_code })
+    let up = e.get_attribute("up", None).and_then(|s| s.parse().ok());
+
+    let delay = e
+        .get_attribute("delay", None)
+        .and_then(|v| v.parse().ok())
+        .map(Duration::from_millis);
+
+    Ok(Key {
+        vk_code: vcode,
+        up,
+        delay,
+    })
 }
 
 fn read_section<T, F>(
@@ -158,9 +171,9 @@ where
     children
 }
 
-fn parse_hex(text: &str) -> Result<u16, AppError> {
+fn parse_hex(text: &str) -> Result<u32, AppError> {
     let text = text.trim_start_matches("0x");
-    u16::from_str_radix(text, 16).map_err(|_| AppError::new(format!("Invalid hex number {}", text)))
+    u32::from_str_radix(text, 16).map_err(|_| AppError::new(format!("Invalid hex number {}", text)))
 }
 
 #[cfg(test)]
