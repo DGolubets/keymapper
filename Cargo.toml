@@ -17,11 +17,11 @@ publish = false
 
 [dependencies]
 futures = "0.3"
-tokio = { version = "0.2", features = ["full"] }
-config = "0.10.1"
+tokio = { version = "1.19.2", features = ["full"] }
+config = "0.13.1"
 log = "0.4.8"
-log4rs = { version = "0.9.0", features = ["toml_format"] }
+log4rs = { version = "1.1.1", features = ["toml_format"] }
 lazy_static = "1.4.0"
 winapi = { version = "0.3", features = ["winuser"] }
-user32-sys = "0.1.2"
-RustyXML = "0.1.1"
+user32-sys = "0.2.0"
+RustyXML = "0.3.0"

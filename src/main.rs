@@ -13,7 +13,7 @@ use futures::future;
 use futures::future::AbortHandle;
 use tokio::runtime::Builder;
 use tokio::sync::mpsc;
-use tokio::time::delay_for;
+use tokio::time::sleep;
 
 use crate::profiles::*;
 use crate::settings::Settings;
@@ -29,9 +29,8 @@ fn main() {
 
     let last_mouse_wheel_time: RefCell<HashMap<bool, Instant>> = RefCell::new(HashMap::new());
 
-    let rt = Builder::new()
-        .threaded_scheduler()
-        .num_threads(1)
+    let rt = Builder::new_multi_thread()
+        .worker_threads(1)
         .enable_all()
         .build()
         .expect("Failed to create Tokio runtime.");
@@ -174,7 +173,7 @@ async fn process_event(e: MatchedEvent) {
             for key in &binding.keys {
                 if let Some(duration) = key.delay {
                     log::trace!("Delaying for {:?}", duration);
-                    delay_for(duration).await;
+                    sleep(duration).await;
                 }
                 let up = key.up.unwrap_or(e.up);
                 log::trace!("Sending key: {:X}, up = {:?}", key.vk_code, up);
